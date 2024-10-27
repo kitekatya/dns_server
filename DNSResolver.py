@@ -1,5 +1,6 @@
 from math import prod
 
+from Record import Record
 from DNSRequestsMaker import DNSRequestsMaker
 from DNSMessage import DNSMessage
 
@@ -8,7 +9,7 @@ class DNSResolver:
     def __init__(self):
         self.request_maker = DNSRequestsMaker()
 
-    def resolve(self, request: DNSMessage, host="a.root-servers.net"):
+    def resolve(self, request: DNSMessage, host="198.41.0.4"):
         possible_multiply = self.check_dop(request)
         if possible_multiply:
             return possible_multiply
@@ -21,16 +22,28 @@ class DNSResolver:
             if response.header.auth_count == 0: break
             for authority in response.authorities:
                 if authority.type == 2:
-                    host = authority.get_address(response.data)
-                    response = self.request_maker.make_request(
-                        request.data, (host, 53))
+                    hostname = authority.get_address(response.data)
+                    host = DNSMessage.get_auth_server_ipv4(
+                        response, hostname)
+                    if host is None:
+                        intermediate_request = (self.request_maker.get_request(hostname))
+                        host = DNSResolver().resolve(DNSMessage(intermediate_request))
+
+                        response1 = DNSResolver().resolve(DNSMessage(
+                            intermediate_request))
+                        for answer in response1.answers:
+                            host = Record.parse_ipv4(answer.address)
+                            if host: break
+
+
+                    response = self.request_maker.make_request(request.data, (host, 53))
                     if response is None: continue
                     response = DNSMessage(response)
                     break
             else:
                 break
 
-        return response.data
+        return response
 
     def check_dop(self, request: DNSMessage):
         domain = request.queries[0].name
@@ -40,7 +53,7 @@ class DNSResolver:
             domain_ = domain.split('.')
             domain_ = domain_[:domain_.index('multiply')]
             mult = prod(map(int, domain_)) % 256
-            return self.request_maker.make_answers(domain, id_,
-                                                   f'127.0.0.{mult}')
+            return DNSMessage(self.request_maker.make_answers(domain, id_,
+                                                   f'127.0.0.{mult}'))
         else:
             return None

@@ -36,3 +36,9 @@ class DNSMessage:
             byte_index += record.length
 
         return records, byte_index
+
+    @staticmethod
+    def get_auth_server_ipv4(dns_response, auth_server):
+        for additional in dns_response.additional:
+            if additional.type == 1 and additional.name == auth_server:
+                return Record.parse_ipv4(additional.address)

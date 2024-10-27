@@ -8,18 +8,17 @@ class DNSRequestsMaker:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
                 server.sendto(request, address)
-                server.settimeout(5)
+                server.settimeout(7)
                 answer, _ = server.recvfrom(4096)
             return answer
         except socket.timeout:
             return None
 
-    @staticmethod
-    def set_recursion_zero(request):
-        return request[:2] + b'\x00\x00' + request[4:]
+    def get_request(self, namehost):
+        return self._get_header(0) + self._get_query(namehost)
 
     def _get_header(self, prev_id, count_answers=0):
-        flags = self._get_flags(is_question=count_answers != 0)
+        flags = self._get_flags(is_question=count_answers == 0)
         requests_count = 1
         answers_count = count_answers
         auth_count = 0

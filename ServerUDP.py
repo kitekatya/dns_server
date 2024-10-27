@@ -19,4 +19,4 @@ class UDPServer:
             if request.queries[0].type == 1 or \
                     request.queries[0].type == 28:
                 response = self.dns_resolver.resolve(request)
-                self.server.sendto(response, address)
+                self.server.sendto(response.data, address)

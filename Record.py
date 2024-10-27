@@ -40,6 +40,13 @@ class Record:
         return '.'.join(decoded_parts)
 
     @staticmethod
+    def parse_ipv4(ipv4_bytes):
+        ipv4_parts = []
+        for byte in ipv4_bytes:
+            ipv4_parts.append(str(byte))
+        return '.'.join(ipv4_parts)
+
+    @staticmethod
     def get_parts_ns(byte_ns, dns_answer):
         parts = []
         current = 0
