@@ -15,6 +15,10 @@ class DNSMessage:
         self.additional, byte_index = self.get_records(byte_index,
                                                        self.header.additional_count)
 
+    def set_recursion_zero(self):
+        self.header.set_recursion_zero()
+        self.data = self.header.data + self.data[12:]
+
     def get_queries(self):
         queries = []
         byte_index = 12

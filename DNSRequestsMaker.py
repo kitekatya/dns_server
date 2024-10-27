@@ -3,10 +3,6 @@ import struct
 
 
 class DNSRequestsMaker:
-
-    def __init__(self):
-        self.request_id = 1
-
     @staticmethod
     def make_request(request, address):
         try:
@@ -18,8 +14,11 @@ class DNSRequestsMaker:
         except socket.timeout:
             return None
 
-    def _get_header(self, count_answers=0):
-        self.request_id += 1
+    @staticmethod
+    def set_recursion_zero(request):
+        return request[:2] + b'\x00\x00' + request[4:]
+
+    def _get_header(self, prev_id, count_answers=0):
         flags = self._get_flags(is_question=count_answers != 0)
         requests_count = 1
         answers_count = count_answers
@@ -27,7 +26,7 @@ class DNSRequestsMaker:
         add_count = 0
 
         return (
-                struct.pack('!H', self.request_id) +
+                struct.pack('!H', prev_id) +
                 flags +
                 struct.pack('!4H', requests_count, answers_count,
                             auth_count, add_count)
@@ -64,8 +63,8 @@ class DNSRequestsMaker:
 
         return bytes_request
 
-    def make_answers(self, domain, *hosts):
-        header = self._get_header(count_answers=len(hosts))
+    def make_answers(self, domain, prev_id, *hosts):
+        header = self._get_header(prev_id, count_answers=len(hosts))
         question_body = self._get_query(domain)
         answers = self._get_answers(*hosts)
         return header + question_body + answers

@@ -15,3 +15,13 @@ class Header:
 
     def encode(self):
         return self.data
+
+    def set_recursion_zero(self):
+        if self.rd == 0: return
+
+        self.rd = 0
+        self.flags = (self.qr << 15) | (self.op_code << 11) | (
+                    self.aa << 10) | (self.tc << 9) | (self.rd << 8)
+
+        self.data = (self.data[:2] + struct.pack('!H', self.flags)
+                     + self.data[4:])
